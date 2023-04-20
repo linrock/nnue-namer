@@ -2,6 +2,7 @@ import hashlib
 from multiprocessing import cpu_count, Process, Value
 import secrets
 import sys
+from time import time
 
 if len(sys.argv) != 3:
     print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list>')
@@ -23,6 +24,7 @@ def get_sha256_hash(nnue_data):
     return h.hexdigest()
 
 def find_variants(nnue_filename, hex_word_list, counter):
+    t0 = time()
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
     while True:
@@ -38,7 +40,8 @@ def find_variants(nnue_filename, hex_word_list, counter):
             with open(new_nnue_filename, 'wb') as f:
                 f.write(nnue_data)
         elif counter.value % 10000 == 0:
-            print(f'Tried {counter.value} times')
+            hashes_per_second = int(counter.value / (time() - t0))
+            print(f'Tried {counter.value} times ({hashes_per_second} hashes/s)')
 
 nnue_filename = sys.argv[1]
 hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
