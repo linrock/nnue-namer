@@ -18,6 +18,7 @@ def random_non_functional_edit(nnue_data):
         nnue_data[i] = list(secrets.token_bytes(1))[0]
 
 def find_variants(nnue_filename, hex_word_list, counter):
+    t0 = time()
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
     while True:
@@ -47,7 +48,8 @@ def find_variants(nnue_filename, hex_word_list, counter):
                             with open(new_nnue_filename, 'wb') as f:
                                 f.write(nnue_data_copy)
                         elif counter.value % 100_000 == 0:
-                            print(f'Tried {counter.value} times')
+                            hashes_per_second = int(counter.value / (time() - t0))
+                            print(f'Tried {counter.value} times ({hashes_per_second} hashes/s)')
 
 nnue_filename = sys.argv[1]
 hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
