@@ -24,7 +24,7 @@ def find_variants(nnue_filename, hex_word_list, counter):
     nnue_data = get_nnue_data(nnue_filename)
     while True:
         nnue_data_copy = nnue_data.copy()
-        random_non_functional_edit(nnue_data_copy)
+        # random_non_functional_edit(nnue_data_copy)
         h = hashlib.sha256()
         h.update(nnue_data_copy[:-104])
         # non-functional edits to bytes near the end of the file
@@ -54,7 +54,7 @@ def find_variants(nnue_filename, hex_word_list, counter):
                                         f.write(nnue_data_copy)
                                 elif counter.value % 100_000 == 0:
                                     hashes_per_second = int(counter.value / (time() - t0))
-                                    print(f'Tried {counter.value} times ({hashes_per_second} hashes/s)')
+                                    print(f'Tried {counter.value:,} times ({hashes_per_second:,} hashes/s)')
 
 nnue_filename = sys.argv[1]
 hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
