@@ -2,6 +2,7 @@ import hashlib
 from multiprocessing import cpu_count, Process, Value
 import secrets
 import sys
+from time import time
 
 if len(sys.argv) != 3:
     print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list>')
