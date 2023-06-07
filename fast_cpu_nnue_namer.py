@@ -26,27 +26,31 @@ def find_variants(nnue_filename, hex_word_list, counter):
         nnue_data_copy = nnue_data.copy()
         random_non_functional_edit(nnue_data_copy)
         h = hashlib.sha256()
-        h.update(nnue_data_copy[:-40])
+        h.update(nnue_data_copy[:-72])
         # non-functional edits to bytes near the end of the file
         for hex1 in range(1, 256):
             nnue_data_copy[-37] = hex1
             for hex2 in range(1, 256):
                 nnue_data_copy[-38] = hex2
-                h2 = h.copy()
-                h2.update(nnue_data_copy[-40:])
-                sha256 = h2.hexdigest()
-                sha256_prefix = sha256[:12]
-                with counter.get_lock():
-                    counter.value += 1
-                if any(sha256_prefix.startswith(word) for word in hex_word_list):
-                    print(f'Found {sha256_prefix} after {counter.value} tries')
-                    new_nnue_filename = f'nn-{sha256_prefix}.nnue'
-                    print(f'Writing nnue data to {new_nnue_filename}')
-                    with open(new_nnue_filename, 'wb') as f:
-                        f.write(nnue_data_copy)
-                elif counter.value % 100_000 == 0:
-                    hashes_per_second = int(counter.value / (time() - t0))
-                    print(f'Tried {counter.value} times ({hashes_per_second} hashes/s)')
+                for hex3 in range(1, 256):
+                    nnue_data_copy[-69] = hex3
+                    for hex4 in range(1, 256):
+                        nnue_data_copy[-70] = hex4
+                        h2 = h.copy()
+                        h2.update(nnue_data_copy[-72:])
+                        sha256 = h2.hexdigest()
+                        sha256_prefix = sha256[:12]
+                        with counter.get_lock():
+                            counter.value += 1
+                        if any(sha256_prefix.startswith(word) for word in hex_word_list):
+                            print(f'Found {sha256_prefix} after {counter.value} tries')
+                            new_nnue_filename = f'nn-{sha256_prefix}.nnue'
+                            print(f'Writing nnue data to {new_nnue_filename}')
+                            with open(new_nnue_filename, 'wb') as f:
+                                f.write(nnue_data_copy)
+                        elif counter.value % 100_000 == 0:
+                            hashes_per_second = int(counter.value / (time() - t0))
+                            print(f'Tried {counter.value} times ({hashes_per_second} hashes/s)')
 
 nnue_filename = sys.argv[1]
 hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
