@@ -52,7 +52,7 @@ def find_variants(nnue_filename, hex_word_list, counter):
                                     print(f'Writing nnue data to {new_nnue_filename}')
                                     with open(new_nnue_filename, 'wb') as f:
                                         f.write(nnue_data_copy)
-                                elif counter.value % 100_000 == 0:
+                                elif counter.value % 1_000_000 == 0:
                                     hashes_per_second = int(counter.value / (time() - t0))
                                     print(f'Tried {counter.value:,} times ({hashes_per_second:,} hashes/s)')
 
