@@ -23,11 +23,12 @@ def find_variants(nnue_filename, hex_word_list, counter):
     t0 = time()
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
+    BOUNDARY = -104
     while True:
         nnue_data_copy = nnue_data.copy()
         random_non_functional_edit(nnue_data_copy)
         h = hashlib.sha256()
-        h.update(nnue_data_copy[:-104])
+        h.update(nnue_data_copy[:BOUNDARY])
         # non-functional edits to bytes near the end of the file
         for hex1 in range(1, 256):
             nnue_data_copy[-37] = hex1
@@ -42,7 +43,7 @@ def find_variants(nnue_filename, hex_word_list, counter):
                             for hex6 in range(1, 256):
                                 nnue_data_copy[-102] = hex6
                                 h2 = h.copy()
-                                h2.update(nnue_data_copy[-104:])
+                                h2.update(nnue_data_copy[BOUNDARY:])
                                 sha256 = h2.hexdigest()
                                 sha256_prefix = sha256[:12]
                                 counter.value += 1
