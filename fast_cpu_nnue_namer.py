@@ -3,7 +3,7 @@ from multiprocessing import cpu_count, Process, RawValue
 from ctypes import c_ulonglong
 import secrets
 import sys
-from time import time
+from time import sleep, time
 
 if len(sys.argv) != 3:
     print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list>')
@@ -20,7 +20,6 @@ def random_non_functional_edit(nnue_data):
         nnue_data[i] = list(secrets.token_bytes(1))[0]
 
 def find_variants(nnue_filename, hex_word_list, counter):
-    t0 = time()
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
     BOUNDARY = -104
@@ -48,14 +47,18 @@ def find_variants(nnue_filename, hex_word_list, counter):
                                 sha256_prefix = sha256[:12]
                                 counter.value += 1
                                 if any(sha256_prefix.startswith(word) for word in hex_word_list):
-                                    print(f'Found {sha256_prefix} after {counter.value} tries')
+                                    print(f'Found {sha256_prefix} after {counter.value:,} tries')
                                     new_nnue_filename = f'nn-{sha256_prefix}.nnue'
                                     print(f'Writing nnue data to {new_nnue_filename}')
                                     with open(new_nnue_filename, 'wb') as f:
                                         f.write(nnue_data_copy)
-                                elif counter.value % 1_000_000 == 0:
-                                    hashes_per_second = int(counter.value / (time() - t0))
-                                    print(f'Tried {counter.value:,} times ({hashes_per_second:,} hashes/s)')
+
+def print_stats(counter):
+    t0 = time()
+    while True:
+        sleep(10)
+        hashes_per_second = int(counter.value / (time() - t0))
+        print(f'Tried {counter.value:,} times ({hashes_per_second:,} hashes/s)')
 
 nnue_filename = sys.argv[1]
 hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
@@ -65,4 +68,8 @@ processes = [
     for i in range(cpu_count() - 1)
 ]
 for p in processes: p.start()
+stats_printer = Process(target=print_stats, args=(counter,))
+stats_printer.start()
+
 for p in processes: p.join()
+stats_printer.join()
