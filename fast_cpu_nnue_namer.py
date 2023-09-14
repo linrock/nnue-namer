@@ -5,9 +5,10 @@ import secrets
 import sys
 from time import sleep, time
 
-if len(sys.argv) != 3:
-    print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list>')
+if len(sys.argv) < 3:
+    print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list> <core_count>')
     sys.exit(0)
+
 
 def get_nnue_data(nnue_filename):
     with open(nnue_filename, 'rb') as f:
@@ -54,10 +55,13 @@ def print_stats(counter):
 
 nnue_filename = sys.argv[1]
 hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
+core_count = int(sys.argv[3]) if len(sys.argv) == 4 else cpu_count() - 1
+print(f"naming {nnue_filename} with {core_count} cores")
+
 counter = RawValue(c_ulonglong, 0)
 processes = [
     Process(target=find_variants, args=(nnue_filename, hex_word_list, counter))
-    for i in range(cpu_count() - 1)
+    for i in range(core_count)
 ]
 for p in processes: p.start()
 stats_printer = Process(target=print_stats, args=(counter,))
