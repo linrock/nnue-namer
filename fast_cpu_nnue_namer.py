@@ -1,9 +1,12 @@
 import hashlib
 from multiprocessing import cpu_count, Process, RawValue
 from ctypes import c_ulonglong
-import secrets
+import random
+import string
 import sys
 from time import sleep, time
+
+CHARS = [ord(c) for c in string.ascii_uppercase + string.ascii_lowercase + string.digits]
 
 if len(sys.argv) < 3:
     print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list> <core_count>')
@@ -15,10 +18,7 @@ def get_nnue_data(nnue_filename):
         return bytearray(f.read())
 
 def random_non_functional_edit(nnue_data):
-    for i in range(33, 36):  # the
-        nnue_data[i] = list(secrets.token_bytes(1))[0]
-    for i in range(79, 85):  # traine
-        nnue_data[i] = list(secrets.token_bytes(1))[0]
+    nnue_data[12:26] = [random.choice(CHARS) for c in range(14)]
 
 def find_variants(nnue_filename, hex_word_list, counter):
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
