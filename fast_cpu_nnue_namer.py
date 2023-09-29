@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import hashlib
 from multiprocessing import cpu_count, Process, RawValue
 from ctypes import c_ulonglong
@@ -6,11 +8,6 @@ import re
 import string
 import sys
 from time import sleep, time
-
-if len(sys.argv) < 3:
-    print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list> <core_count>')
-    sys.exit(0)
-
 
 CHARS = [ord(c) for c in string.ascii_uppercase + string.ascii_lowercase + string.digits]
 ALPHANUMERIC_STRING = r"^[a-z0-9]+$"
@@ -77,19 +74,25 @@ def print_stats(counter):
         hashes_per_second = int(counter.value / (time() - t0))
         print(f'Tried {counter.value:,} times ({hashes_per_second:,} hashes/s)')
 
-nnue_filename = sys.argv[1]
-hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
-core_count = int(sys.argv[3]) if len(sys.argv) == 4 else cpu_count() - 1
-print(f"naming {nnue_filename} with {core_count} cores")
 
-counter = RawValue(c_ulonglong, 0)
-processes = [
-    Process(target=find_variants, args=(nnue_filename, hex_word_list, counter))
-    for i in range(core_count)
-]
-for p in processes: p.start()
-stats_printer = Process(target=print_stats, args=(counter,))
-stats_printer.start()
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print('Usage: ./fast_cpu_nnue_namer.py <nnue_filename> <hex_word_list> <core_count>')
+        sys.exit(0)
 
-for p in processes: p.join()
-stats_printer.join()
+    nnue_filename = sys.argv[1]
+    hex_word_list = open(sys.argv[2], 'r').read().strip().split('\n')
+    core_count = int(sys.argv[3]) if len(sys.argv) == 4 else cpu_count() - 1
+    print(f"naming {nnue_filename} with {core_count} cores")
+
+    counter = RawValue(c_ulonglong, 0)
+    processes = [
+        Process(target=find_variants, args=(nnue_filename, hex_word_list, counter))
+        for i in range(core_count)
+    ]
+    for p in processes: p.start()
+    stats_printer = Process(target=print_stats, args=(counter,))
+    stats_printer.start()
+
+    for p in processes: p.join()
+    stats_printer.join()
