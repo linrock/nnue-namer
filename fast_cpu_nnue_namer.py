@@ -2,6 +2,7 @@ import hashlib
 from multiprocessing import cpu_count, Process, RawValue
 from ctypes import c_ulonglong
 import random
+import re
 import string
 import sys
 from time import sleep, time
@@ -19,6 +20,9 @@ def get_nnue_data(nnue_filename):
 
 def random_non_functional_edit(nnue_data):
     nnue_data[12:26] = [random.choice(CHARS) for c in range(14)]
+
+def matches_hex_word_list(hex_word_list, sha256_prefix):
+    return any(sha256_prefix.startswith(word) for word in hex_word_list)
 
 def find_variants(nnue_filename, hex_word_list, counter):
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
@@ -39,7 +43,7 @@ def find_variants(nnue_filename, hex_word_list, counter):
                 sha256 = h2.hexdigest()
                 sha256_prefix = sha256[:12]
                 counter.value += 1
-                if any(sha256_prefix.startswith(word) for word in hex_word_list):
+                if matches_hex_word_list(hex_word_list, sha256_prefix):
                     print(f'Found {sha256_prefix} after {counter.value:,} tries')
                     new_nnue_filename = f'nn-{sha256_prefix}.nnue'
                     print(f'Writing nnue data to {new_nnue_filename}')
