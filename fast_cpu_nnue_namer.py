@@ -23,17 +23,30 @@ def get_nnue_data(nnue_filename):
 def random_non_functional_edit(nnue_data):
     nnue_data[12:26] = [random.choice(CHARS) for c in range(14)]
 
-def matches_hex_word_list(hex_word_list, sha256_prefix):
+def compile_hex_word_list(hex_word_list):
+    prefix_matches = []
+    regex_matches = []
     for word in hex_word_list:
-        if re.match(ALPHANUMERIC_STRING, sha256_prefix) and sha256_prefix.startswith(word):
-            return True
-        elif re.match(word, sha256_prefix):
-            return True
-    return False
+        if not len(word.strip()) or word.startswith("#"):
+            continue
+        if re.match(ALPHANUMERIC_STRING, word):
+            prefix_matches.append(word)
+        else:
+            regex_matches.append(word)
+    return {
+        'prefix_matches': prefix_matches,
+        'regex_match': re.compile(f"({'|'.join(regex_matches)})")
+    }
+
+def matches_hex_word_list(compiled_hex_word_list, sha256_prefix):
+    if any(sha256_prefix.startswith(prefix) for prefix in compiled_hex_word_list['prefix_matches']):
+        return True
+    return re.match(compiled_hex_word_list['regex_match'], sha256_prefix)
 
 def find_variants(nnue_filename, hex_word_list, counter):
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
+    compiled_hex_word_list = compile_hex_word_list(hex_word_list)
     BOUNDARY = -39
     while True:
         nnue_data_copy = nnue_data.copy()
@@ -50,7 +63,7 @@ def find_variants(nnue_filename, hex_word_list, counter):
                 sha256 = h2.hexdigest()
                 sha256_prefix = sha256[:12]
                 counter.value += 1
-                if matches_hex_word_list(hex_word_list, sha256_prefix):
+                if matches_hex_word_list(compiled_hex_word_list, sha256_prefix):
                     print(f'Found {sha256_prefix} after {counter.value:,} tries')
                     new_nnue_filename = f'nn-{sha256_prefix}.nnue'
                     print(f'Writing nnue data to {new_nnue_filename}')
