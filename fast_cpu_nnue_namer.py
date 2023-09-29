@@ -8,6 +8,7 @@ import sys
 from time import sleep, time
 
 CHARS = [ord(c) for c in string.ascii_uppercase + string.ascii_lowercase + string.digits]
+ALPHANUMERIC_STRING = r"^[a-z0-9]+$"
 
 if len(sys.argv) < 3:
     print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list> <core_count>')
@@ -22,7 +23,12 @@ def random_non_functional_edit(nnue_data):
     nnue_data[12:26] = [random.choice(CHARS) for c in range(14)]
 
 def matches_hex_word_list(hex_word_list, sha256_prefix):
-    return any(sha256_prefix.startswith(word) for word in hex_word_list)
+    for word in hex_word_list:
+        if re.match(ALPHANUMERIC_STRING, sha256_prefix) and sha256_prefix.startswith(word):
+            return True
+        elif re.match(word, sha256_prefix):
+            return True
+    return False
 
 def find_variants(nnue_filename, hex_word_list, counter):
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
