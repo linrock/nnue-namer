@@ -7,12 +7,13 @@ import string
 import sys
 from time import sleep, time
 
-CHARS = [ord(c) for c in string.ascii_uppercase + string.ascii_lowercase + string.digits]
-ALPHANUMERIC_STRING = r"^[a-z0-9]+$"
-
 if len(sys.argv) < 3:
     print('Usage: ./cpu_nnue_namer.py <nnue_filename> <hex_word_list> <core_count>')
     sys.exit(0)
+
+
+CHARS = [ord(c) for c in string.ascii_uppercase + string.ascii_lowercase + string.digits]
+ALPHANUMERIC_STRING = r"^[a-z0-9]+$"
 
 
 def get_nnue_data(nnue_filename):
