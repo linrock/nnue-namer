@@ -13,6 +13,34 @@ CHARS = [ord(c) for c in string.ascii_uppercase + string.ascii_lowercase + strin
 ALPHANUMERIC_STRING = r"^[a-z0-9]+$"
 
 
+class TrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_prefix = False
+
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, prefix):
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                node.children[char] = TrieNode()
+            node = node.children[char]
+        node.is_end_of_prefix = True
+
+    def search_prefix(self, word):
+        node = self.root
+        for char in word:
+            if char not in node.children:
+                return False
+            node = node.children[char]
+            if node.is_end_of_prefix:
+                return True
+        return False
+
+
 def get_nnue_data(nnue_filename):
     with open(nnue_filename, 'rb') as f:
         return bytearray(f.read())
@@ -38,12 +66,19 @@ def compile_hex_word_list(hex_word_list):
 def matches_hex_word_list(compiled_hex_word_list, sha256_prefix):
     if any(sha256_prefix.startswith(prefix) for prefix in compiled_hex_word_list['prefix_matches']):
         return True
-    return re.match(compiled_hex_word_list['regex_match'], sha256_prefix)
+    if not compiled_hex_word_list.get('regex_matches'):
+        return False
+    return re.search(compiled_hex_word_list['regex_match'], sha256_prefix)
 
 def find_variants(nnue_filename, hex_word_list, counter):
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
     compiled_hex_word_list = compile_hex_word_list(hex_word_list)
+    trie = Trie()
+    for prefix in compiled_hex_word_list['prefix_matches']:
+        trie.insert(prefix)
+    print(f"  # prefix matches: {len(compiled_hex_word_list['prefix_matches'])}")
+    print(f"  # regex matches: {len(compiled_hex_word_list.get('regex_matches', []))}")
     BOUNDARY = -39
     while True:
         nnue_data_copy = nnue_data.copy()
@@ -60,7 +95,8 @@ def find_variants(nnue_filename, hex_word_list, counter):
                 sha256 = h2.hexdigest()
                 sha256_prefix = sha256[:12]
                 counter.value += 1
-                if matches_hex_word_list(compiled_hex_word_list, sha256_prefix):
+                # if matches_hex_word_list(compiled_hex_word_list, sha256_prefix):
+                if trie.search_prefix(sha256_prefix):
                     print(f'Found {sha256_prefix} after {counter.value:,} tries')
                     new_nnue_filename = f'nn-{sha256_prefix}.nnue'
                     print(f'Writing nnue data to {new_nnue_filename}')
