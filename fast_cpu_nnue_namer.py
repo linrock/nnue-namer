@@ -74,34 +74,48 @@ def find_variants(nnue_filename, hex_word_list, counter):
     print(f'Searching for {nnue_filename} variants with sha256 matching {len(hex_word_list)} words')
     nnue_data = get_nnue_data(nnue_filename)
     compiled_hex_word_list = compile_hex_word_list(hex_word_list)
+
     trie = Trie()
     for prefix in compiled_hex_word_list['prefix_matches']:
         trie.insert(prefix)
     print(f"  # prefix matches: {len(compiled_hex_word_list['prefix_matches'])}")
     print(f"  # regex matches: {len(compiled_hex_word_list.get('regex_matches', []))}")
-    BOUNDARY = -39
+
+    BOUNDARY1 = -71  # -39 - 32
+    BOUNDARY2 = -39
+
     while True:
         nnue_data_copy = nnue_data.copy()
         random_non_functional_edit(nnue_data_copy)
         h = hashlib.sha256()
-        h.update(nnue_data_copy[:BOUNDARY])
+        h.update(nnue_data_copy[:BOUNDARY1])
+
         # non-functional edits to bytes near the end of the file
         for hex1 in range(1, 256):
-            nnue_data_copy[-37] = hex1
+            nnue_data_copy[-70] = hex1
             for hex2 in range(1, 256):
-                nnue_data_copy[-38] = hex2
+                nnue_data_copy[-69] = hex2
                 h2 = h.copy()
-                h2.update(nnue_data_copy[BOUNDARY:])
-                sha256 = h2.hexdigest()
-                sha256_prefix = sha256[:12]
-                counter.value += 1
-                # if matches_hex_word_list(compiled_hex_word_list, sha256_prefix):
-                if trie.search_prefix(sha256_prefix):
-                    print(f'Found {sha256_prefix} after {counter.value:,} tries')
-                    new_nnue_filename = f'nn-{sha256_prefix}.nnue'
-                    print(f'Writing nnue data to {new_nnue_filename}')
-                    with open(new_nnue_filename, 'wb') as f:
-                        f.write(nnue_data_copy)
+                h2.update(nnue_data_copy[BOUNDARY1:BOUNDARY2])
+
+                for hex3 in range(1, 256):
+                    nnue_data_copy[-38] = hex3
+                    for hex4 in range(1, 256):
+                        nnue_data_copy[-37] = hex4
+
+                        h3 = h2.copy()
+                        h3.update(nnue_data_copy[BOUNDARY2:])
+                        sha256 = h3.hexdigest()
+                        sha256_prefix = sha256[:12]
+                        counter.value += 1
+
+                        if trie.search_prefix(sha256_prefix):
+                            print(f'Found {sha256_prefix} after {counter.value:,} tries')
+                            new_nnue_filename = f'nn-{sha256_prefix}.nnue'
+                            print(f'Writing nnue data to {new_nnue_filename}')
+                            with open(new_nnue_filename, 'wb') as f:
+                                f.write(nnue_data_copy)
+
 
 def print_stats(counter):
     t0 = time()
